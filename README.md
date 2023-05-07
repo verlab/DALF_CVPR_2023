@@ -98,7 +98,7 @@ To train DALF from scratch on a set of arbitrary images with default parameters,
 python3 train.py
 ```
 To train the model, we recommend a machine with a GPU with at least 10 GB memory, and 16 GB of RAM. You can attempt to reduce the batch size and increase the number of gradient accumulations accordingly, to train in a GPU with less than 10 GB.
-We provide a Colab to demonstrate how to train DALF from scratch: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/verlab/xx/xx.ipynb). While it is possible to train the model on Colab, it should take more than 48 hours of GPU usage.
+We provide a Colab to demonstrate how to train DALF from scratch: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/verlab/DALF_CVPR_2023/blob/main/notebooks/train_DALF_from_scratch.ipynb). While it is possible to train the model on Colab, it should take more than 48 hours of GPU usage.
 
 ### Evaluation
 We follow the same protocol and benchmark evaluation of [DEAL](https://github.com/verlab/DEAL_NeurIPS_2021#vi---evaluation). You will need to [download the non-rigid evaluation benchmark files](https://www.verlab.dcc.ufmg.br/descriptors/#datasets). Then, run the [evaluation script](eval/eval_nonrigid.sh):
