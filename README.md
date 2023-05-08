@@ -1,7 +1,7 @@
-# DALF: Deformation-Aware Local Features
+# DALF: Deformation-Aware Local Features (CVPR 2023)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/verlab/DALF_CVPR_2023/blob/main/notebooks/registration_with_DALF.ipynb)
-
+### [ArXiv](https://arxiv.org/abs/2304.00583) | [Project Page](https://www.verlab.dcc.ufmg.br/descriptors/dalf_cvpr23/)
 <img align="center" src='./figs/example_reg.png' align="center"/>
 
 <div align="center">
