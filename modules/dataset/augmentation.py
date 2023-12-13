@@ -31,38 +31,39 @@ import time
 random.seed(0)
 torch.manual_seed(0)
 
+# 生成 Thin-Plate Spline (TPS) 变换所需的参数
 def generateRandomTPS(shape, grid = (8, 6), GLOBAL_MULTIPLIER = 0.3, prob = 0.5):
-
+    # 初始化网格和控制点：
     h, w = shape
     sh, sw = h/grid[0], w/grid[1]
     src = torch.dstack(torch.meshgrid(torch.arange(0, h + sh , sh),
                          torch.arange(0, w + sw , sw)))
-
+    # 偏移控制点：
     offsets = torch.rand(grid[0]+1, grid[1]+1, 2) - 0.5
     offsets *= torch.tensor([ sh/2, sw/2 ]).view(1, 1, 2)  * min(0.97, 3. * GLOBAL_MULTIPLIER)
-    dst = src + offsets if np.random.uniform() < prob else src
-    
+    dst = src + offsets if np.random.uniform() < prob else src # 生成目标点：
+    # 归一化坐标系：
     src, dst = src.view(1, -1, 2), dst.view(1, -1, 2)
     src = (src / torch.tensor([h,w]).view(1,1,2) ) * 2 - 1.
     dst = (dst / torch.tensor([h,w]).view(1,1,2) ) * 2 - 1.
-    weights, A = findTPS(dst, src)
+    weights, A = findTPS(dst, src) # 计算权重和 A 矩阵：
 
     return src, weights, A
 
 
-
+# 生成随机的仿射变换矩阵
 def generateRandomHomography(shape, GLOBAL_MULTIPLIER = 0.3):
 
-    theta = np.radians(np.random.normal(0, 12.0*GLOBAL_MULTIPLIER)) 
+    theta = np.radians(np.random.normal(0, 12.0*GLOBAL_MULTIPLIER)) # 生成随机旋转角度
 
-    scale = np.random.normal(0, 1.1*GLOBAL_MULTIPLIER)#0.15*GLOBAL_MULTIPLIER)
+    scale = np.random.normal(0, 1.1*GLOBAL_MULTIPLIER)#0.15*GLOBAL_MULTIPLIER) # 随机尺度
     if scale < 0.0: # get the right part of the gaussian
         scale = 1.0/(1. + abs(scale))
     else:
         scale = 1. + scale
 
     tx , ty = -shape[1]/2.0 , -shape[0]/2.0 
-    txn, tyn = np.random.normal(0, 80.0*GLOBAL_MULTIPLIER, 2) #translation error
+    txn, tyn = np.random.normal(0, 80.0*GLOBAL_MULTIPLIER, 2) #translation error 平移误差
     c, s = np.cos(theta), np.sin(theta)
 
     sx , sy = np.random.normal(0,0.6*GLOBAL_MULTIPLIER,2)
@@ -86,6 +87,7 @@ def generateRandomHomography(shape, GLOBAL_MULTIPLIER = 0.3):
 
     return H
 
+# 数据增强
 class AugmentationPipe(nn.Module):
     def __init__(
                 self, device, load_dataset = True,
@@ -99,7 +101,7 @@ class AugmentationPipe(nn.Module):
         super(AugmentationPipe, self).__init__()
         self.half = 16
         self.device = device
-        self.sample_img = cv2.imread('./assets/kanagawa_1.png')
+        self.sample_img = cv2.imread('./assets/kanagawa_1.png') # 图像样例
         self.dims = warp_resolution
         self.batch_size = batch_size
         self.out_resolution = out_resolution 
@@ -111,13 +113,15 @@ class AugmentationPipe(nn.Module):
         self.all_imgs = glob.glob(img_dir)
         random.shuffle(self.all_imgs)
 
+        # 组合图像增强操作
         self.aug_list = kornia.augmentation.ImageSequential(
-                        kornia.augmentation.RandomChannelShuffle(p=0.5),
-                        kornia.augmentation.ColorJitter(0.2, 0.2, 0.2, 0.2, p=1.),
-                        kornia.augmentation.RandomEqualize(p = 0.5),
-                        kornia.augmentation.RandomGaussianBlur(p = 0.3, sigma = (2.5, 2.5), kernel_size = (7,7))
+                        kornia.augmentation.RandomChannelShuffle(p=0.5), # 随机重排图像的通道顺序，重排概率为50%
+                        kornia.augmentation.ColorJitter(0.2, 0.2, 0.2, 0.2, p=1.), # 进行颜色抖动，增加图像的对比度、亮度和色调。(对比度、亮度、饱和度、色相的变化范围)
+                        kornia.augmentation.RandomEqualize(p = 0.5), # 对图像进行直方图均衡化，提高图像的对比度，均衡化的概率为50%。
+                        kornia.augmentation.RandomGaussianBlur(p = 0.3, sigma = (2.5, 2.5), kernel_size = (7,7)) # 进行随机高斯模糊处理。(高斯核)
                         )
         
+        # 调整裁剪并通过特征点选择满足要求的图片
         if load_dataset:
             print('Found a total of ', len(self.all_imgs), ' images for training..')
 
@@ -126,7 +130,7 @@ class AugmentationPipe(nn.Module):
 
             train = []
             fast = cv2.FastFeatureDetector_create(30)
-            for p in tqdm.tqdm(self.all_imgs[:max_num_imgs], desc='loading train'):
+            for p in tqdm.tqdm(self.all_imgs[:max_num_imgs], desc='loading train'): # 训练数据集(裁剪、大小调整、满足图像特征点)
                 im = cv2.imread(p)
                 halfH, halfW = im.shape[0]//2, im.shape[1]//2
                 if halfH > halfW:
@@ -150,30 +154,33 @@ class AugmentationPipe(nn.Module):
 
             self.TPS = True
 
-
+    # 将输入的点集进行归一化处理，将坐标映射到 [-1, 1] 的范围内
     def norm_pts_grid(self, x):
         if len(x.size()) == 2:
             return (x.view(1,-1,2) * self.dims_s / self.dims_t) * 2. - 1 
         return (x * self.dims_s / self.dims_t) * 2. - 1
 
+    # 对归一化后的点集进行反归一化操作，将其从 [-1, 1] 的范围映射回原始的坐标空间
     def denorm_pts_grid(self, x):
         if len(x.size()) == 2:
             return ((x.view(1,-1,2) + 1) / 2.) / self.dims_s * self.dims_t
         return ((x+1) / 2.) / self.dims_s * self.dims_t
 
+    # 生成随机的关键点
     def rnd_kps(self, shape, n = 256):
         h, w = shape
-        kps = torch.rand(size = (3,n)).to(self.device)
+        kps = torch.rand(size = (3,n)).to(self.device) # [0,1)范围，之后调整到图像范围
         kps[0,:]*=w
         kps[1,:]*=h
         kps[2,:] = 1.0
 
         return kps
 
+    # 对输入的点进行仿射变换
     def warp_points(self, H, pts):
       scale = self.dims_s.view(-1,2)
       offset = torch.tensor([int(self.dims[0]*0.2), int(self.dims[1]*0.2)], device = pts.device).float()
-      pts = pts*scale + offset
+      pts = pts*scale + offset # 缩放和偏移
       pts = torch.vstack( [pts.t(), torch.ones(1, pts.shape[0], device = pts.device)])
       warped = torch.matmul(H, pts)
       warped = warped / warped[2,...] 
@@ -181,35 +188,37 @@ class AugmentationPipe(nn.Module):
       return (warped - offset) / scale
 
     def forward(self, x, difficulty = 0.3, TPS = False, prob_deformation = 0.5, test = False):
-        with torch.no_grad():
-            x = (x/255.).to(self.device)
+        with torch.no_grad(): # 不需要梯度
+            x = (x/255.).to(self.device) # [0,1]范围
             shape = x.shape[-2:]
             h, w = shape
 
             #t0 = time.time()
-            output = self.aug_list(x)
+            output = self.aug_list(x) # 数据增强
 
-            #Correlated Gaussian Noise
-            if np.random.uniform() > 0.5:
+            #Correlated Gaussian Noise 随机选择是否添加相关的高斯噪声，并在需要时添加到增强后的图像中。
+            if np.random.uniform() > 0.5: # 50%的概率
                 noise = F.interpolate(torch.randn_like(output)*(16/255), (h//2, w//2))
                 noise = F.interpolate(noise, (h, w), mode = 'bicubic')
                 output = torch.clip( output + noise, 0., 1.)
 
             #print('done in ', time.time() - t0)
+            # 生成随机仿射变换矩阵
             H = torch.tensor([generateRandomHomography(shape, difficulty) for b in range(self.batch_size)],
                                dtype = torch.float32).to(self.device)
-            
+            # 对图像进行仿射变换，可以实现平移、旋转、缩放等操作
             output = kornia.geometry.transform.warp_perspective(output, H,
                             dsize = shape, padding_mode = 'zeros')
 
 
             #crop 20% of image boundaries each side to reduce invalid pixels after warps
+            # 裁剪图像边界来减少变换后可能产生的无效像素
             low_h = int(h * 0.2); low_w = int(w*0.2)
             high_h = int(h*0.8); high_w= int(w * 0.8)
             output = output[..., low_h:high_h, low_w:high_w]
 
             #apply TPS if desired:
-            
+            # 进行 Thin-Plate Spline (TPS) 变换
             if TPS:
                 src, weights, A = None, None, None
                 for b in range(self.batch_size):
@@ -224,9 +233,9 @@ class AugmentationPipe(nn.Module):
                         A = torch.cat((b_A, A))
 
                 #print(output.shape, src.shape, weights.shape, A.shape)
-                output = warp_image_tps(output, src, weights, A)
+                output = warp_image_tps(output, src, weights, A) # TPS 变换被用于对输出的图像进行形变，从而产生不同的变换效果。
 
-            output = F.interpolate(output, self.out_resolution[::-1], mode = 'bilinear', align_corners = False)
+            output = F.interpolate(output, self.out_resolution[::-1], mode = 'bilinear', align_corners = False) # 插值
 
         
         if TPS:
@@ -234,6 +243,7 @@ class AugmentationPipe(nn.Module):
         else:
             return output, H
 
+    # 计算目标关键点在变换后的图像中的对应位置
     def get_correspondences(self, kps_target, T):
         H, H2, src, W, A = T
         undeformed  = self.denorm_pts_grid(   
