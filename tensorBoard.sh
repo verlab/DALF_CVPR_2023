@@ -1,0 +1,1 @@
+tensorboard --logdir='/root/workspace/code/ex1/DALF_CVPR_2023/logdir'

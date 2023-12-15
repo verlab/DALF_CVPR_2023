@@ -10,7 +10,7 @@ def parseArg():
     parser.add_argument("-m", "--mode", help="Training mode scheme - two stage (ts) is the default"
     , required=False, choices = ['end2end-backbone', 'end2end-tps', 'end2end-full', 'ts1', 'ts2', 'ts-fl'], default = 'ts1')
     parser.add_argument("-dpath", "--datapath", help="Dataset path."
-    , required=False, default = './dataset/*/images/*.jpg') 	
+    , required=False, default = '/root/workspace/data/DALF/1dsfm/*/images/*.jpg') 	
     parser.add_argument("-log", "--logdir", help="Output path where results will be saved."
     , required=False, default = './logdir') 
     parser.add_argument("-s", "--save", help="Path for saving model"
