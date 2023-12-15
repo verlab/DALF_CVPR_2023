@@ -1,9 +1,9 @@
 #Please put here the path of images and TPS files from nonrigid benchmark
-PATH_IMGS='/srv/storage/datasets/nonrigiddataset/eval_bench/All_PNG'
-PATH_TPS='/homeLocal/guipotje/sshfs/datasets/gt_tps'
+PATH_IMGS='/root/workspace/code/ex1/DALF_CVPR_2023/dataset/eval/image/Kinect1/Bag1'
+PATH_TPS='/root/workspace/code/ex1/DALF_CVPR_2023/dataset/eval/tps/Kinect1/Bag1'
 
 #Set working dir to save results. Please change
-working_dir='/tmp/nonrigid_eval'
+working_dir='/root/workspace/code/ex1/DALF_CVPR_2023/result'
 mkdir -p $working_dir
 
 #############################################################################
