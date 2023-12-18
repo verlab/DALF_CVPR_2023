@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "/root/anaconda3/envs/doppelgangers/bin/python",
+            "type": "python",
+            "request": "launch",
+            "program": "/root/workspace/code/ex1/DALF_CVPR_2023/train.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--mode", "ts1", "--gpu", "4,5,6,7"]
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 
 
+# 计算两组描述子之间的欧氏距离矩阵，并将结果保存到文件中
 def save(desc_ref, desc_tgt, filename):
 	desc_ref = np.array(desc_ref)
 	desc_tgt = np.array(desc_tgt)
@@ -31,6 +32,7 @@ def save(desc_ref, desc_tgt, filename):
 			
 		f.write('\n')
 
+# 计算两组描述子之间的欧氏距离，然后将这些距离值保存到文件中。
 def save_cvnorm(desc_ref, desc_tgt, filename):
 	desc_ref = np.array(desc_ref)
 	desc_tgt = np.array(desc_tgt)
@@ -49,6 +51,7 @@ def save_cvnorm(desc_ref, desc_tgt, filename):
 			
 		f.write('\n')	
 
+# 从一个 CSV 文件中加载关键点信息并创建 OpenCV 的关键点对象列表。
 def load_cv_kps(csv):
 	keypoints = []
 	for line in csv:
@@ -57,6 +60,7 @@ def load_cv_kps(csv):
 
 	return keypoints
 
+# 保存desc到本地文件
 def save_desc(filename, desc):
 	m, n = desc.shape
 	with open(filename, 'w') as f:

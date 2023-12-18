@@ -3,8 +3,8 @@ import os, tqdm
 def retrieve(data_path, reduced = False):
     #Set reduced to true to only downlad first two datasets as a sample
     datasets_links = {
-            #"Alamo":"http://landmark.cs.cornell.edu/projects/1dsfm/images.Alamo.tar", ## VALIDATION
-            #"EllisIsland":"http://landmark.cs.cornell.edu/projects/1dsfm/images.Ellis_Island.tar", ## TEST
+            "Alamo":"http://landmark.cs.cornell.edu/projects/1dsfm/images.Alamo.tar", ## VALIDATION
+            "EllisIsland":"http://landmark.cs.cornell.edu/projects/1dsfm/images.Ellis_Island.tar", ## TEST
             "MadridMetropolis":"http://landmark.cs.cornell.edu/projects/1dsfm/images.Madrid_Metropolis.tar",  ## ALL BELOW TRAIN
             "MontrealNotreDame":"http://landmark.cs.cornell.edu/projects/1dsfm/images.Montreal_Notre_Dame.tar",
             "NYC_Library":"http://landmark.cs.cornell.edu/projects/1dsfm/images.NYC_Library.tar",
@@ -32,3 +32,10 @@ def retrieve(data_path, reduced = False):
                         if reduced and downloaded > 2:
                             break
                         # os.system("rm downloads/" + key+".tar") ### If you want to save space uncomment this line to remove the tar files
+
+def main():
+    data_path = '/root/workspace/code/ex1/DALF_CVPR_2023/data'
+    retrieve(data_path, reduced=False)
+
+if __name__ == "__main__":
+    main()

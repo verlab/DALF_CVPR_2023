@@ -1,0 +1,7 @@
+& \multicolumn{1}{l}{kanagawa\_rot ($18$)}& $\underline{0.10}$  \\
+& \multicolumn{1}{l}{lascaux\_rot ($18$)}& $\underline{0.13}$  \\
+& \multicolumn{1}{l}{lascaux\_scale ($3$)}& $\underline{0.46}$  \\
+& \multicolumn{1}{l}{kanagawa\_scale ($3$)}& $\underline{0.35}$  \\
+& \multicolumn{1}{l}{chambre\_scale ($3$)}& $\underline{0.24}$  \\
+& \multicolumn{1}{l}{chambre\_rot ($18$)}& $\underline{0.11}$  \\
+

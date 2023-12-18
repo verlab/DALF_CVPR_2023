@@ -171,7 +171,7 @@ class DALF_extractor:
         return self.detectAndCompute(img)[0]
 
 
-
+# 稀疏的 2D 位置信息在 3D 张量上进行插值。 TODO
 class InterpolateSparse2d(nn.Module):
   '''
   Interpolate 3D tensor given N sparse 2D positions
@@ -195,6 +195,7 @@ class InterpolateSparse2d(nn.Module):
     x = F.grid_sample(x.unsqueeze(0), grid, mode = self.mode, align_corners = True)
     return x.permute(0,2,3,1).squeeze(0).squeeze(-2)
 
+# 根据热图（Heatmap）采样关键点（keypoints）TODO
 class KeypointSampler(nn.Module):
   '''
   Sample keypoints according to a Heatmap
@@ -210,6 +211,7 @@ class KeypointSampler(nn.Module):
     super().__init__()
     self.window_size = window_size
 
+  # 将输入的热图张量进行划分，划分成一个个的窗口。
   def gridify(self, x):
     B, C, H, W = x.shape
     x = x.unfold(2, self.window_size, self.window_size)                              \
@@ -385,7 +387,7 @@ class DEAL(nn.Module):
 
     return xy
 
-
+  # 非最大值抑制
   def NMS(self, x, threshold = 3., kernel_size = 3):
     pad=kernel_size//2
     local_max = nn.MaxPool2d(kernel_size=kernel_size, stride=1, padding=pad)(x)
@@ -410,7 +412,7 @@ class DEAL(nn.Module):
     else:
       kpts = [{'xy':self.NMS(out['map'][b], threshold)} for b in range(B)]
 
-    #filter kps on border during training
+    #filter kps on border during training 训练期间对关键点进行边界过滤
     if not NMS:
       for b in range(B):
         filter_A = kpts[b]['xy'][:,0] >= 16 
@@ -426,6 +428,7 @@ class DEAL(nn.Module):
         # kpts[0]['xy'] = kpts[0]['xy'][:2,:]
         # kpts[0]['logprobs'] = kpts[0]['logprobs'][:2]
     
+    # 选top-k个关键点
     if top_k is not None:
       for b in range(B):
         scores = out['map'][b].squeeze(0)[kpts[b]['xy'][:,1].long(), kpts[b]['xy'][:,0].long()]
@@ -485,6 +488,7 @@ class DEAL(nn.Module):
       else:
         return kpts, descs, out
 
+# 用于计算模型中可训练参数的数量
 def get_nb_trainable_params(model):
 	model_parameters = filter(lambda p: p.requires_grad, model.parameters())
 	nb_params = sum([np.prod(p.size()) for p in model_parameters])
@@ -652,7 +656,7 @@ class ThinPlateNet(nn.Module):
     return patches
 
 
-
+# 填充方式
 class Pad2D(torch.nn.Module):
   def __init__(self, pad, mode): 
     super().__init__()
@@ -662,6 +666,7 @@ class Pad2D(torch.nn.Module):
   def forward(self, x):
     return F.pad(x, pad = self.pad, mode = self.mode)
 
+# 描述子
 class HardNet(nn.Module):
   def __init__(self, nchannels=3, out_ch = 128):
     super().__init__()
@@ -796,7 +801,7 @@ class UpBlock(nn.Module):
   def forward(self, x):
     return self.conv(x)
 
-
+# encoder: 每一层都保留
 class Encoder(nn.Module):
     def __init__(self, channels):
         super().__init__()
@@ -833,7 +838,7 @@ class Decoder(nn.Module):
                                      )
         
     def forward(self, x):
-        x = x[::-1]
+        x = x[::-1] # 翻转
         x_next = x[0]
         for i in range(len(self.convs)):
           upsampled = F.interpolate(x_next, size = x[i+1].size()[-2:], mode = 'bilinear', align_corners = True)
@@ -862,7 +867,7 @@ class UNet(nn.Module):
     '''  
     def __init__(self, enc_channels = [1, 32, 64, 128]):
       super().__init__()
-      dec_channels = enc_channels[::-1]
+      dec_channels = enc_channels[::-1] # 翻转
       self.encoder = Encoder(enc_channels)
       self.decoder = Decoder(enc_channels, dec_channels)
       self.nchannels = enc_channels[0]

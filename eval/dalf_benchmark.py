@@ -19,7 +19,7 @@ import tqdm
 
 import distmat
 
-modules = os.path.dirname(os.path.realpath(__file__)) + '/..'         
+modules = os.path.dirname(os.path.realpath(__file__)) + '/..' # 当前文件路径/../       
 sys.path.insert(0, modules)
 
 try:
@@ -35,7 +35,7 @@ warnings.warn = warn
 experiment_name = ''
 exp_dir_target = ''
 
-
+# 如果没有文件夹就创建
 def check_dir(f):
 	if not os.path.exists(f):
 		os.makedirs(f)
@@ -65,13 +65,13 @@ def parseArg():
 
 	return args
 
-
+# 标记无效位置的关键点
 def correct_cadar_csv(csv):
 	for line in csv:
 		if line['x'] < 0 or line['y'] < 0:
 			line['valid'] = 0
 
-
+# 从csv文件中提取有效位置的关键点
 def gen_keypoints_from_csv(csv):
 	keypoints = []
 	for line in csv:
@@ -82,14 +82,16 @@ def gen_keypoints_from_csv(csv):
 
 	return keypoints	 
 
-			
+# 从文件中读取目录列表			
 def get_dir_list(filename):
 	with open(filename,'r') as f:
-		dirs = [line.rstrip('\n').rstrip() for line in f if line.rstrip('\n').rstrip()]
+		dirs = [line.rstrip('\n').rstrip() for line in f if line.rstrip('\n').rstrip()] # 内容中去掉换行符的非空行作为目录列表的元素
 	return dirs or False
 
+# 计算两组特征点（ref_kps 和 tgt_kps）及其描述符（ref_descriptors 和 descriptors）之间的距离
 def save_dist_matrix(ref_kps, ref_descriptors, ref_gt, tgt_kps, descriptors, tgt_gt, out_fname):
 	#np.linalg.norm(a-b)
+	# 初始化一个矩阵用于存储距离值，默认值为-1
 	print ('saving matrix in:',  out_fname)
 	size = len(ref_gt)
 	dist_mat = np.full((size,size),-1.0,dtype = np.float32)
@@ -99,36 +101,39 @@ def save_dist_matrix(ref_kps, ref_descriptors, ref_gt, tgt_kps, descriptors, tgt
 	matching_sum = 0
 
 	begin = time.time()
-
+	# 遍历两组特征点及其描述符
 	for m in range(len(ref_kps)):
 		i = ref_kps[m].class_id
+		# 检查特征点是否有效
 		if ref_gt[i]['valid'] and tgt_gt[i]['valid']:
 			valid_m+=1
 		for n in range(len(tgt_kps)):
 			j = tgt_kps[n].class_id
+			# 检查特征点是否有效
 			if ref_gt[i]['valid'] and tgt_gt[i]['valid'] and tgt_gt[j]['valid']:
+				# 计算描述符之间的距离，并存储在 dist_mat 中
 				dist_mat[i,j] = np.linalg.norm(ref_descriptors[m]-descriptors[n]) #distance.euclidean(ref_d,tgt_d) #np.linalg.norm(ref_d-tgt_d)
 
 	print('Time to match NRLFeat: %.3f'%(time.time() - begin))
-
+	# 找到每行最小值所在的列索引
 	mins = np.argmin(np.where(dist_mat >= 0, dist_mat, 65000), axis=1)
+	# 统计匹配数 TODO 有逻辑问题
 	for i,j in enumerate(mins):
 		if i==j and ref_gt[i]['valid'] and tgt_gt[i]['valid']:
 			matches+=1
 
 	print ('--- MATCHES --- %d/%d'%(matches,valid_m))
-
+	# 将距离矩阵写入文件
 	with open(out_fname, 'w') as f:
-
 		f.write('%d %d\n'%(size,size))
-
 		for i in range(dist_mat.shape[0]):
 			for j in range(dist_mat.shape[1]):
 				f.write('%.8f '%(dist_mat[i,j]))
 
-
+# TODO 比较两组关键点（kp 和 kp_gt）之间的对应关系
 def get_gt_idx(kp, kp_gt):
 	kp_dict = {}
+	# 创建字典 {k.pt:idx}
 	for idx, k in enumerate(kp):
 		kp_dict['%.2f,%.2f'%(k.pt[0],k.pt[1])] = idx
 
@@ -140,6 +145,7 @@ def get_gt_idx(kp, kp_gt):
 
 	return gt_idx
 
+# TODO 它遍历指定目录中的图像数据集，并针对指定的数据集进行DALF特征提取和匹配
 def run_benchmark(args):
 
 	dev = torch.device('cuda' if torch.cuda.is_available else 'cpu')
