@@ -14,10 +14,10 @@ benchmark_path='./dalf_benchmark.py'
 metrics_path='./plotUnorderedPR.py'
 
 #For final eval
-ablation='model_ts-fl_final'
+ablation='model_ts1_80000_final'
 
 #Data Path
-network_path='../weights/model_ts-fl_final.pth'
+network_path='/root/workspace/code/ex1/DALF_CVPR_2023/weights/model_ts1_80000_final.pth'
 
 #Original TPS files
 tps_dir_o=$PATH_TPS
